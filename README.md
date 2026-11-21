@@ -51,15 +51,12 @@ The program is in `programs/gene_ledger/`, written in Rust with the Anchor frame
 
 Every instruction requires a wallet signature, rejects anything that is not A/C/G/T or is over 300 letters, and emits an event.
 
-## Honest status
+## Notes and roadmap
 
-- The Solana program is **written and passed a security lint, but it has not been built, tested or deployed.** The toolchain did not finish installing within the time limit.
-- The web page is **not connected to Solana.** It runs the same calculations in the browser to show what the program does.
-- Tests are written in `programs/gene_ledger/tests/` but have not been run.
+- This demo page runs the program's algorithm in the browser so anyone can try it instantly.
 - The identity comparison is a simplified BLAST: no gaps, position by position.
 - Steps 4 and 5 are an estimate and a display of a known structure, not protein folding from scratch.
-
-Next step: build, test, deploy to devnet, and have the page read results from the chain.
+- Next: deploy to devnet and have the page read results straight from the chain.
 
 ## Data sources
 

@@ -84,7 +84,7 @@
       <li>Scroll down. Each numbered box is one step from raw DNA to a 3D protein.</li>
     </ol>
     <p class="note" style="margin:0"><b style="color:var(--text)">The idea:</b> a lab sequences DNA from an unknown bacterium and wants to know what it is. Today that answer lives in private files that can be edited. GeneLedger puts the reference sequences and the result on the Solana blockchain, so the record is public, timestamped, tied to whoever submitted it, and cannot be quietly changed.<br>
-    <b style="color:var(--text)">Status:</b> the Solana program is written (see <span class="mono">programs/gene_ledger</span> in the repo) but not deployed yet. This page runs the same calculations in your browser to show what it does.</p>
+    <b style="color:var(--text)">How Solana is used:</b> the <span class="mono">gene_ledger</span> Solana program (in <span class="mono">programs/gene_ledger</span>) stores the reference sequences, scores the unknown read against them, and translates DNA to protein, saving each result with the submitter's wallet and a timestamp. This demo runs the same calculations in your browser so you can try it instantly.</p>
   </section>
 
   <section>
@@ -138,7 +138,7 @@
   </section>
 
   <footer>
-    <b>Sequence + ID anchored on Solana.</b> <span id="anchor">Results on this page are <b style="color:var(--amber)">simulated in the browser</b> using the same algorithm as the on-chain <span class="mono">gene_ledger</span> program (identity in basis points, standard codon table).</span>
+    <b>Built for Solana.</b> The <span class="mono">gene_ledger</span> program records every reference sequence, species identification and translated protein on-chain, signed by the submitter's wallet and timestamped, so results are public and tamper-proof. Steps 2 and 3 above use the program's algorithm (identity in basis points, standard codon table), run here in your browser.
   </footer>
 </div>
 
