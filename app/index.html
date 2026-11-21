@@ -76,26 +76,37 @@
     <p class="tag">Verifiable species identification on Solana, then from DNA to protein to 3D structure. One marker gene, <span class="mono">rpoB</span>, does both jobs.</p>
   </header>
 
+  <section style="border-color:var(--indigo)">
+    <div class="step"><h2>Start here (30 seconds)</h2></div>
+    <ol style="margin:8px 0 12px;padding-left:20px">
+      <li>Click <b>Load example sequence</b> below. It is real DNA from <i>E. coli</i> O157:H7, the food-poisoning strain.</li>
+      <li>Click <b>▶ Run pipeline</b>.</li>
+      <li>Scroll down. Each numbered box is one step from raw DNA to a 3D protein.</li>
+    </ol>
+    <p class="note" style="margin:0"><b style="color:var(--text)">The idea:</b> a lab sequences DNA from an unknown bacterium and wants to know what it is. Today that answer lives in private files that can be edited. GeneLedger puts the reference sequences and the result on the Solana blockchain, so the record is public, timestamped, tied to whoever submitted it, and cannot be quietly changed.<br>
+    <b style="color:var(--text)">Status:</b> the Solana program is written (see <span class="mono">programs/gene_ledger</span> in the repo) but not deployed yet. This page runs the same calculations in your browser to show what it does.</p>
+  </section>
+
   <section>
     <div class="step"><div class="num">1</div><h2>Unknown read</h2><span class="where web">input</span></div>
-    <p class="note">Paste an unknown DNA read (A/C/G/T) and run the pipeline. References are <b>real rpoB gene fragments</b> (first 180 bp) from NCBI RefSeq.</p>
+    <p class="note">DNA is a long string of four letters: A, C, G and T. A "read" is a short stretch of it that a sequencing machine has spelled out. Paste one below, or load the example.</p>
     <div class="row">
       </div>
     <textarea id="paste" class="mono" placeholder="Paste your unknown DNA read here (A/C/G/T)"></textarea>
-    <div class="row" style="margin-top:12px"><button id="run">▶ Run pipeline</button></div>
+    <div class="row" style="margin-top:12px"><button id="example">Load example sequence</button><button id="run">▶ Run pipeline</button></div>
     <div id="seq" class="seq mono" style="margin-top:12px"></div>
   </section>
 
   <section>
     <div class="step"><div class="num">2</div><h2>Identify species</h2><span class="where chain">on-chain algorithm</span></div>
-    <p class="note">Simplified BLAST: ungapped, position-by-position % identity against each reference in the ledger. Pink ticks are mismatches.</p>
+    <p class="note">We line the unknown read up against DNA from known species and count how many letters match. The highest score is the likely species. Pink ticks mark letters that differ. The references are the same gene (<span class="mono">rpoB</span>, first 180 letters) from three real bacteria, taken from the NCBI database. Labs do this with a tool called BLAST; this is a simplified version small enough to run on a blockchain.</p>
     <div id="bars"></div>
     <div id="verdict"></div>
   </section>
 
   <section>
     <div class="step"><div class="num">3</div><h2>Translate: primary structure</h2><span class="where chain">on-chain algorithm</span></div>
-    <p class="note">Codons are read in triplets through the standard genetic code until the first stop codon.</p>
+    <p class="note">Cells read DNA three letters at a time. Each triplet (a "codon") is the code for one amino acid, the building blocks of proteins. Each circle below is one amino acid; the chain of them is the protein. It works like a lookup table, which is why it can run as code on-chain.</p>
     <div id="codons" class="codons"></div>
     <div class="legend">
       <span><i style="background:var(--indigo)"></i>hydrophobic</span><span><i style="background:var(--mint)"></i>polar</span>
@@ -106,7 +117,7 @@
 
   <section>
     <div class="step"><div class="num">4</div><h2>Secondary structure</h2><span class="where web">off-chain prediction</span></div>
-    <p class="note">Chou–Fasman-style propensity window (5 residues). A quick estimate of α-helix, β-sheet and coil, not de novo folding.</p>
+    <p class="note">The amino-acid chain does not stay straight. Stretches of it curl into spirals (helices) or flatten into strands (sheets). This is a quick statistical estimate of which parts do what (Chou–Fasman method), not a full folding simulation.</p>
     <div class="scroll"><svg id="ss" height="130"></svg></div>
     <div class="legend">
       <span><i style="background:var(--pink)"></i>α-helix</span><span><i style="background:var(--sky)"></i>β-sheet</span><span><i style="background:var(--dim)"></i>coil</span>
@@ -115,7 +126,7 @@
 
   <section>
     <div class="step"><div class="num">5</div><h2>Tertiary + quaternary structure</h2><span class="where web">off-chain display</span></div>
-    <p class="note">The real solved structure of <i>E. coli</i> RNA polymerase holoenzyme (RCSB PDB <span class="mono">4YG2</span>). rpoB encodes the β subunit; the full complex is the quaternary structure.</p>
+    <p class="note">The helices and sheets fold into a 3D shape, and several folded chains lock together into a working machine. This is the real, lab-solved structure of <i>E. coli</i> RNA polymerase, the machine that reads genes (RCSB PDB <span class="mono">4YG2</span>). The gene in this demo, rpoB, builds the pink chain. Drag to rotate.</p>
     <div class="row">
       <button id="bFull" class="on">Full complex (quaternary)</button>
       <button id="bBeta">β subunit only (tertiary)</button>
@@ -203,7 +214,7 @@ function run(){
   const el=$('ss');el.setAttribute('width',prot.length*W+16);
   el.innerHTML=`<defs><filter id="glow" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`+svg;
 }
-$('run').onclick=run;run();
+$('example').onclick=()=>{$('paste').value='ATGGTTTACTCCTATACCGAGAAAAAACGTATTCGTAAGGATTTTGGTAAACGTCCACAAGTTCTGGATGTACCTTATCTCCTTTCTATCCAGCTTGACTCGTTTCAGAAATTTATCGAGCAAGATCCTGAAGGGCAGTATGGTCTGGAAGCTGCTTTCCGTTCCGTATTCCCGATTCAG'};$('run').onclick=run;run();
 
 // ---------- 5. 3D structure ----------
 const CH={A:['α','#8fd3ff'],B:['α','#8fd3ff'],C:['β (rpoB)','#ff9ee6'],D:["β′",'#8b8cff'],E:['ω','#ffd48a'],F:['σ70','#8ff5d2']};

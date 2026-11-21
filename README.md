@@ -1,92 +1,76 @@
-# workshop — Claude Code workspace for Solana (Anchor / Kit / Surfpool)
+# GeneLedger
 
-Drop-in `.claude/` + `CLAUDE.md` + `.mcp.json` for an Anchor project. Designed around three ideas:
+**Verifiable species identification on Solana, then from DNA to protein to 3D structure.**
 
-1. **Context is cheap to load, expensive to keep.** `CLAUDE.md` stays under 100 lines of always-true facts. Everything else lives in path-scoped `.claude/rules/*.md` (loads only when Claude touches matching files) or skills (load only when invoked).
-2. **Guardrails are enforced, not requested.** Permission deny rules + `PreToolUse` hooks make keypair access, mainnet mutation, and generated-code edits mechanically impossible, regardless of what the model decides.
-3. **Fresh knowledge beats memory.** The official Solana MCP server and the Solana Foundation `solana-dev` skill are wired in so Claude checks current Anchor/Kit APIs instead of guessing from training data.
+Built in a 30-minute Solana workshop by a molecular biology student, using Claude Code.
 
-## Layout
+## The idea in plain words
+
+A lab sequences DNA from an unknown bacterium and wants to know what species it is. Today the reference data and the answer live in private files that anyone with access can edit.
+
+GeneLedger puts them on the Solana blockchain instead:
+
+- **Reference sequences** from known species are stored on-chain as a shared database.
+- **An unknown read** is compared against them on-chain, and the best match and its score are recorded with the submitter's wallet and a timestamp.
+- **The DNA is translated into its protein** on-chain, using the standard genetic code.
+
+The result is a public lab notebook that cannot be quietly changed, and anyone can re-check it.
+
+## Try the demo (1 minute)
+
+1. Download this repository (green **Code** button, then **Download ZIP**) and open `app/index.html` in a browser.
+   Or try it without downloading: https://htmlpreview.github.io/?https://github.com/shaanbhasin64-ux/geneledger/blob/main/app/index.html
+2. Click **Load example sequence**, then **Run pipeline**.
+3. Scroll through the five steps.
+
+The example is real DNA: the first 180 letters of the *rpoB* gene from *E. coli* O157:H7 str. Sakai (NCBI NP_312937.1). You can also paste it yourself:
 
 ```
-CLAUDE.md                         project facts, commands, conventions, workflow  (~95 lines)
-CLAUDE.local.md.example           personal notes template (gitignored once copied)
-.mcp.json                         Solana Developer MCP (mcp.solana.com) + Context7
-.gitignore                        anchor/node/secrets/claude-local ignores
-scripts/setup.sh                  toolchain check, hook chmod, installs solana-dev skill
-.claude/
-  settings.json                   permissions (allow/ask/deny), env (NO_DNA=1), hooks
-  settings.local.json.example     per-developer overrides (acceptEdits, notifications)
-  rules/
-    security.md                   always loaded — audit checklist + operational rules
-    anchor-programs.md            paths: programs/**/*.rs — structure, idioms, deps, verification
-    tests.md                      paths: tests/**, programs/**/tests/** — harness choice, coverage rules
-    client.md                     paths: app/**, clients/**, scripts/**/*.ts — Kit/Codama rules
-  hooks/
-    session-context.sh            SessionStart: toolchain versions, CLI cluster, Anchor.toml programs
-    protect-secrets.sh            PreToolUse Read/Edit/Write: blocks keypairs, .env, generated code
-    guard-bash.sh                 PreToolUse Bash: denies secret dumps / keypair overwrite / piped installers; asks on mainnet or deploy
-    format-on-edit.sh             PostToolUse: rustfmt / prettier / taplo
-    post-build-check.sh           PostToolUse (anchor build): declare_id! == keypair == Anchor.toml, IDL vs client freshness
-    stop-check.sh                 Stop: nudges to build+test if programs/ changed without a build
-  skills/
-    new-instruction/              /new-instruction <program> <ix> — full scaffold incl. tests + client regen
-    audit/                        /audit [--diff|program] — forks the security-auditor subagent
-    deploy/                       /deploy <cluster> — the only sanctioned deploy path (model can't self-invoke)
-    test/                         /test — run suite + Anchor error-code triage table
-    cu-profile/                   /cu-profile <program> <ix> — CU measurement + optimization playbook
-    solana-dev/                   (installed by setup.sh) Solana Foundation's official skill + references
-  agents/
-    security-auditor.md           read-only, opus, project memory
-    anchor-reviewer.md            read-only code-quality reviewer, sonnet
-    test-engineer.md              writes tests only, sonnet, acceptEdits
-    solana-docs.md                haiku doc-lookup via Solana MCP, no CLAUDE.md
+ATGGTTTACTCCTATACCGAGAAAAAACGTATTCGTAAGGATTTTGGTAAACGTCCACAAGTTCTGGATGTACCTTATCTCCTTTCTATCCAGCTTGACTCGTTTCAGAAATTTATCGAGCAAGATCCTGAAGGGCAGTATGGTCTGGAAGCTGCTTTCCGTTCCGTATTCCCGATTCAG
 ```
 
-## Install
+## What the five steps show
 
-**New project**
-```bash
-anchor init my-program --test-template litesvm --package-manager pnpm --install-agent-skills
-cd my-program
-# copy this scaffold's files in (CLAUDE.md, .mcp.json, .claude/, scripts/, merge .gitignore)
-bash scripts/setup.sh
-claude
+| Step | What happens | Where it belongs |
+|---|---|---|
+| 1. Unknown read | You paste a DNA sequence (letters A, C, G, T) | Input |
+| 2. Identify species | The read is lined up against known species and matching letters are counted. Highest score wins | Solana program |
+| 3. Translate | DNA is read three letters at a time; each triplet codes for one amino acid, and the chain of amino acids is the protein | Solana program |
+| 4. Secondary structure | A statistical estimate of which parts of the chain curl into spirals or flatten into strands | Off-chain (web page) |
+| 5. 3D structure | The real, lab-solved structure of the protein machine this gene helps build (RNA polymerase, PDB 4YG2) | Off-chain (web page) |
+
+Small, checkable steps go on-chain. Heavy computation stays off-chain.
+
+## How Solana is used
+
+The program is in `programs/gene_ledger/`, written in Rust with the Anchor framework. It has three instructions:
+
+- `add_reference(species, seq)` stores a reference sequence at an address derived from the species name, so a species cannot be registered twice.
+- `identify(read)` compares the read with the reference accounts passed in, and stores the best species, the identity score (in basis points) and a timestamp under the submitter's wallet. It only accepts references that belong to this program.
+- `translate(seq)` stores the translated protein under the submitter's wallet.
+
+Every instruction requires a wallet signature, rejects anything that is not A/C/G/T or is over 300 letters, and emits an event.
+
+## Honest status
+
+- The Solana program is **written and passed a security lint, but it has not been built, tested or deployed.** The toolchain did not finish installing within the time limit.
+- The web page is **not connected to Solana.** It runs the same calculations in the browser to show what the program does.
+- Tests are written in `programs/gene_ledger/tests/` but have not been run.
+- The identity comparison is a simplified BLAST: no gaps, position by position.
+- Steps 4 and 5 are an estimate and a display of a known structure, not protein folding from scratch.
+
+Next step: build, test, deploy to devnet, and have the page read results from the chain.
+
+## Data sources
+
+- Reference sequences: first 180 bases of *rpoB* from NCBI RefSeq. *E. coli* K-12 MG1655 (NP_418414.1), *Salmonella* Typhimurium LT2 (NP_463022.1), *Bacillus subtilis* 168 (NP_387988.2).
+- 3D structure: RCSB PDB entry 4YG2, *E. coli* RNA polymerase holoenzyme.
+
+## Repository layout
+
 ```
-
-**Existing project** — copy the same files into the repo root; if you already have a `.claude/settings.json`, merge the `permissions` and `hooks` blocks rather than overwriting. Then `bash scripts/setup.sh`.
-
-In the first session run `/context` (confirm CLAUDE.md + 4 rules loaded), `/mcp` (trust `solana-mcp`), and `/hooks` (see 7 hooks registered).
-
-## Daily flow
-
-| You type | What happens |
-|---|---|
-| `add a withdraw instruction to vault that ...` | Claude loads `anchor-programs.md`, designs accounts/constraints first, then likely invokes `/new-instruction` |
-| `/test` | runs `anchor test`, maps Anchor error codes to causes |
-| `/audit --diff` | isolated opus subagent audits changed files, returns severity-ranked report |
-| `/cu-profile vault withdraw` | baseline CU → optimizations → pinned budget test |
-| `/deploy devnet` | preflight, explicit confirmation, deploy, IDL upload, post-deploy record |
-| `@agent-anchor-reviewer review my diff` | code-quality pass before PR |
-
-## Why these specific choices
-
-- **`NO_DNA=1`** in `env`: Anchor and Surfpool detect a non-human operator and drop TUIs/prompts for parseable output.
-- **Deny on `Read(…keypair.json)` *and* a Bash hook**: permission deny rules only cover Claude's file tools; `cat target/deploy/x-keypair.json` needs the hook. Both exist.
-- **`ask` instead of `deny` for deploys**: you still deploy from the session, but every deploy is a visible approval with the cluster in the prompt.
-- **`disable-model-invocation: true` on `/deploy`**: Claude can't decide to deploy because the code "looks ready"; only you can type it.
-- **`context: fork` + `agent: security-auditor` on `/audit`**: the audit runs in a clean context that hasn't seen the implementation reasoning — the work isn't grading itself.
-- **`CLAUDE_CODE_SUBAGENT_MODEL=sonnet`** default with `model: opus` pinned only on the auditor: cheap exploration, expensive judgment where it matters.
-- **Path-scoped rules** instead of one giant CLAUDE.md: the TS rules never consume context while you're in Rust, and vice-versa.
-- **`stop-check.sh`** uses `stop_hook_active` so it nudges at most once per turn and can't loop.
-
-## Customize
-
-- Tighten/loosen `permissions.allow` in `.claude/settings.local.json` (gitignored) rather than the committed file.
-- Add CU budgets per instruction in `.claude/rules/anchor-programs.md` once measured.
-- Pinocchio instead of Anchor? Swap `anchor-programs.md` for a `pinocchio-programs.md` rule with `paths: programs/**/*.rs` and update the Stack section of `CLAUDE.md`; the hooks and agents are framework-agnostic.
-- Run `/doctor prompt-audit` quarterly — it flags stale instructions and files that contradict each other.
-
-## Versions this scaffold assumes (Nov 2026)
-
-Anchor 1.x.x · Solana CLI (Agave) · Surfpool · Rust 1.89+ · Node 20.18+ · `@anchor-lang/core` · `@solana/kit` 8 · Claude Code 2.1.2xx+ (for `.claude/rules/` `paths:` frontmatter and hook `if:` filters). Check `.claude/skills/solana-dev/references/compatibility-matrix.md` after `setup.sh` for the live matrix.
+app/index.html                  the visual demo (single file)
+programs/gene_ledger/src/       the Solana program
+programs/gene_ledger/tests/     its tests
+.claude/, CLAUDE.md             the workshop's Claude Code setup
+```
