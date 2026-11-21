@@ -137,9 +137,16 @@
     <div class="legend" id="chainLegend"></div>
   </section>
 
-  <footer>
-    <b>Built for Solana.</b> The <span class="mono">gene_ledger</span> program records every reference sequence, species identification and translated protein on-chain, signed by the submitter's wallet and timestamped, so results are public and tamper-proof. Steps 2 and 3 above use the program's algorithm (identity in basis points, standard codon table), run here in your browser.
-  </footer>
+  <section style="border-color:var(--indigo)">
+    <div class="step"><h2>How Solana fits in</h2></div>
+    <p class="note" style="margin:4px 0 14px">Think of Solana as a shared lab notebook that nobody can erase. The <span class="mono">gene_ledger</span> program (in <span class="mono">programs/gene_ledger</span>) writes three kinds of entries:</p>
+    <div class="legend" style="flex-direction:column;gap:12px;color:var(--text);font-size:15px;margin:0">
+      <div><b style="color:var(--mint)">1. Reference library.</b> Labs add DNA from known species. Each species gets one permanent slot, so nobody can swap in a fake version.</div>
+      <div><b style="color:var(--mint)">2. Species ID.</b> You submit an unknown read. The program scores it against the library and records the best match, the score, your wallet and the time. That is public proof of who identified what, and when.</div>
+      <div><b style="color:var(--mint)">3. Protein.</b> The program translates the DNA into its amino-acid chain and records it under your wallet.</div>
+    </div>
+    <p class="note" style="margin:14px 0 0">Steps 2 and 3 on this page use the program's exact algorithm, run in your browser so you can try it instantly. Steps 4 and 5 are heavier visual work that stays off-chain.</p>
+  </section>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.4.2/3Dmol-min.js"></script>

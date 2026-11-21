@@ -43,20 +43,27 @@ Small, checkable steps go on-chain. Heavy computation stays off-chain.
 
 ## How Solana is used
 
-The program is in `programs/gene_ledger/`, written in Rust with the Anchor framework. It has three instructions:
+Think of Solana as a shared lab notebook that nobody can erase. The `gene_ledger` program (`programs/gene_ledger/`, Rust + Anchor) writes three kinds of entries:
 
-- `add_reference(species, seq)` stores a reference sequence at an address derived from the species name, so a species cannot be registered twice.
-- `identify(read)` compares the read with the reference accounts passed in, and stores the best species, the identity score (in basis points) and a timestamp under the submitter's wallet. It only accepts references that belong to this program.
-- `translate(seq)` stores the translated protein under the submitter's wallet.
+| Instruction | What it does | Why it matters |
+|---|---|---|
+| `add_reference(species, seq)` | Adds DNA from a known species to the shared reference library. Each species gets one permanent address derived from its name | Nobody can register a second, fake version of a species |
+| `identify(read)` | Scores an unknown read against the library and records the best species, the identity score, the submitter's wallet and a timestamp | Public, tamper-proof proof of who identified what, and when |
+| `translate(seq)` | Translates the DNA into its amino-acid chain and records it under the submitter's wallet | The protein result is anchored to the same record |
 
-Every instruction requires a wallet signature, rejects anything that is not A/C/G/T or is over 300 letters, and emits an event.
+Built-in protections:
 
-## Notes and roadmap
+- Every entry must be signed by a wallet.
+- Only A/C/G/T sequences up to 300 letters are accepted.
+- `identify` only compares against genuine library entries owned by the program, so a match cannot be rigged with a fake reference.
+- Every action emits an event that other apps can follow.
 
-- This demo page runs the program's algorithm in the browser so anyone can try it instantly.
-- The identity comparison is a simplified BLAST: no gaps, position by position.
-- Steps 4 and 5 are an estimate and a display of a known structure, not protein folding from scratch.
-- Next: deploy to devnet and have the page read results straight from the chain.
+Steps 2 and 3 on the demo page use the program's exact algorithm (identity in basis points, standard genetic code), run in the browser so anyone can try it instantly. Steps 4 and 5 are heavier visual work that stays off-chain.
+
+## Good to know
+
+- The identity score is a simplified BLAST: letters are compared position by position, without gaps.
+- Step 4 is a statistical estimate of the protein's local shape; step 5 shows the real, lab-solved structure.
 
 ## Data sources
 
