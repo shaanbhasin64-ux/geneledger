@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GeneLedger</title>
+<style>
+  :root{
+    --bg:#0a0918; --panel:#121030; --line:#2a2760; --text:#e9e8ff; --dim:#9a97c9;
+    --indigo:#8b8cff; --violet:#c4a7ff; --pink:#ff9ee6; --mint:#8ff5d2; --sky:#8fd3ff; --amber:#ffd48a;
+    --A:#8ff5d2; --C:#8fd3ff; --G:#ffd48a; --T:#ff9ee6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#231f5c 0%,transparent 60%),var(--bg);
+    color:var(--text);font:16px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 20px 80px}
+  header{padding:64px 0 28px}
+  h1{font-size:clamp(40px,7vw,72px);margin:0;letter-spacing:-.03em;line-height:1;
+    background:linear-gradient(90deg,var(--indigo),var(--violet),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 22px rgba(139,140,255,.45))}
+  .tag{color:var(--dim);font-size:18px;max-width:640px;margin:14px 0 0}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  section{background:linear-gradient(180deg,rgba(139,140,255,.07),rgba(139,140,255,.02));border:1px solid var(--line);
+    border-radius:18px;padding:24px;margin-top:22px;box-shadow:0 0 40px rgba(139,140,255,.08) inset}
+  .step{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .num{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#0a0918;
+    background:linear-gradient(135deg,var(--indigo),var(--pink));box-shadow:0 0 18px rgba(196,167,255,.7)}
+  h2{margin:0;font-size:22px}
+  .where{margin-left:auto;font-size:12px;padding:4px 10px;border-radius:99px;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+  .where.chain{color:var(--mint);border-color:rgba(143,245,210,.45)}
+  .where.web{color:var(--amber);border-color:rgba(255,212,138,.45)}
+  p.note{color:var(--dim);font-size:14px;margin:4px 0 16px}
+  button,select{font:inherit;color:var(--text);background:#1a1745;border:1px solid var(--line);border-radius:10px;padding:8px 14px;cursor:pointer}
+  button:hover,button.on{border-color:var(--indigo);box-shadow:0 0 14px rgba(139,140,255,.5)}
+  textarea{width:100%;min-height:74px;background:#0d0b24;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:13px;resize:vertical}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .seq{font-size:15px;letter-spacing:.12em;word-break:break-all;line-height:1.9;padding:12px;background:#0d0b24;border-radius:12px;border:1px solid var(--line)}
+  .seq span{opacity:0;animation:pop .35s forwards}
+  .bA{color:var(--A)}.bC{color:var(--C)}.bG{color:var(--G)}.bT{color:var(--T)}
+  .seq span,.codon b{text-shadow:0 0 8px currentColor}
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .bar{margin:14px 0}
+  .bar .lab{display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px}
+  .track{height:14px;background:#0d0b24;border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+  .fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#4a48a8,var(--indigo));transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+  .bar.win .fill{background:linear-gradient(90deg,var(--indigo),var(--pink));box-shadow:0 0 18px var(--pink)}
+  .bar.win .lab{color:var(--pink);font-weight:700}
+  .strip{display:flex;height:16px;margin-top:6px;border-radius:4px;overflow:hidden}
+  .strip i{flex:1;background:#23205a}
+  .strip i.x{background:var(--pink);box-shadow:0 0 10px 2px var(--pink);position:relative;z-index:1}
+  .codons{display:flex;flex-wrap:wrap;gap:6px}
+  .codon{display:flex;flex-direction:column;align-items:center;gap:5px;opacity:0;animation:pop .4s forwards}
+  .codon b{font-weight:500;font-size:12px;letter-spacing:.08em;padding:2px 5px;border-radius:6px;background:#0d0b24;border:1px solid var(--line)}
+  .bead{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#0a0918;font-size:14px}
+  .hyd{background:var(--indigo);box-shadow:0 0 12px var(--indigo)}
+  .pol{background:var(--mint);box-shadow:0 0 12px var(--mint)}
+  .pos{background:var(--sky);box-shadow:0 0 12px var(--sky)}
+  .neg{background:var(--pink);box-shadow:0 0 12px var(--pink)}
+  .spe{background:var(--amber);box-shadow:0 0 12px var(--amber)}
+  .stop{background:#3a3768;color:var(--text)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--dim);margin-top:14px}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+  .scroll{overflow-x:auto;padding-bottom:6px}
+  #viewer{width:100%;height:480px;position:relative;border-radius:14px;overflow:hidden;background:#07061a;border:1px solid var(--line)}
+  #viewer canvas{border-radius:14px}
+  #vstatus{font-size:13px;color:var(--dim);margin-top:8px}
+  footer{margin-top:26px;padding:18px 22px;border:1px dashed var(--line);border-radius:14px;color:var(--dim);font-size:14px}
+  footer b{color:var(--mint)}
+  .big{font-size:30px;font-weight:800;color:var(--pink);text-shadow:0 0 18px rgba(255,158,230,.6)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>GeneLedger</h1>
+    <p class="tag">Verifiable species identification on Solana, then from DNA to protein to 3D structure. One marker gene, <span class="mono">rpoB</span>, does both jobs.</p>
+  </header>
+
+  <section>
+    <div class="step"><div class="num">1</div><h2>Unknown read</h2><span class="where web">input</span></div>
+    <p class="note">Paste an unknown DNA read (A/C/G/T) and run the pipeline. References are <b>real rpoB gene fragments</b> (first 180 bp) from NCBI RefSeq.</p>
+    <div class="row">
+      </div>
+    <textarea id="paste" class="mono" placeholder="Paste your unknown DNA read here (A/C/G/T)"></textarea>
+    <div class="row" style="margin-top:12px"><button id="run">▶ Run pipeline</button></div>
+    <div id="seq" class="seq mono" style="margin-top:12px"></div>
+  </section>
+
+  <section>
+    <div class="step"><div class="num">2</div><h2>Identify species</h2><span class="where chain">on-chain algorithm</span></div>
+    <p class="note">Simplified BLAST: ungapped, position-by-position % identity against each reference in the ledger. Pink ticks are mismatches.</p>
+    <div id="bars"></div>
+    <div id="verdict"></div>
+  </section>
+
+  <section>
+    <div class="step"><div class="num">3</div><h2>Translate: primary structure</h2><span class="where chain">on-chain algorithm</span></div>
+    <p class="note">Codons are read in triplets through the standard genetic code until the first stop codon.</p>
+    <div id="codons" class="codons"></div>
+    <div class="legend">
+      <span><i style="background:var(--indigo)"></i>hydrophobic</span><span><i style="background:var(--mint)"></i>polar</span>
+      <span><i style="background:var(--sky)"></i>positive</span><span><i style="background:var(--pink)"></i>negative</span>
+      <span><i style="background:var(--amber)"></i>special (G, P, C)</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="step"><div class="num">4</div><h2>Secondary structure</h2><span class="where web">off-chain prediction</span></div>
+    <p class="note">Chou–Fasman-style propensity window (5 residues). A quick estimate of α-helix, β-sheet and coil, not de novo folding.</p>
+    <div class="scroll"><svg id="ss" height="130"></svg></div>
+    <div class="legend">
+      <span><i style="background:var(--pink)"></i>α-helix</span><span><i style="background:var(--sky)"></i>β-sheet</span><span><i style="background:var(--dim)"></i>coil</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="step"><div class="num">5</div><h2>Tertiary + quaternary structure</h2><span class="where web">off-chain display</span></div>
+    <p class="note">The real solved structure of <i>E. coli</i> RNA polymerase holoenzyme (RCSB PDB <span class="mono">4YG2</span>). rpoB encodes the β subunit; the full complex is the quaternary structure.</p>
+    <div class="row">
+      <button id="bFull" class="on">Full complex (quaternary)</button>
+      <button id="bBeta">β subunit only (tertiary)</button>
+      <button id="bSpin">Pause spin</button>
+    </div>
+    <div id="viewer"></div>
+    <div id="vstatus">Loading structure…</div>
+    <div class="legend" id="chainLegend"></div>
+  </section>
+
+  <footer>
+    <b>Sequence + ID anchored on Solana.</b> <span id="anchor">Results on this page are <b style="color:var(--amber)">simulated in the browser</b> using the same algorithm as the on-chain <span class="mono">gene_ledger</span> program (identity in basis points, standard codon table).</span>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.4.2/3Dmol-min.js"></script>
+<script>
+// ---------- genetic code ----------
+const B='TCAG', AA='FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG';
+const CODON={}, REV={};
+for(let i=0;i<64;i++){const c=B[i>>4]+B[(i>>2)&3]+B[i&3];CODON[c]=AA[i];(REV[AA[i]]??=[]).push(c)}
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+// ---------- REAL reference sequences: first 180 bp of the rpoB gene (NCBI RefSeq) ----------
+const REFS=[
+  {name:'Escherichia coli K-12 MG1655', hint:'rpoB · NCBI NP_418414.1', seq:'ATGGTTTACTCCTATACCGAGAAAAAACGTATTCGTAAGGATTTTGGTAAACGTCCACAAGTTCTGGATGTACCTTATCTCCTTTCTATCCAGCTTGACTCGTTTCAGAAATTTATCGAGCAAGATCCTGAAGGGCAGTATGGTCTGGAAGCTGCTTTCCGTTCCGTATTCCCGATTCAG'},
+  {name:'Salmonella Typhimurium LT2', hint:'rpoB · NCBI NP_463022.1', seq:'ATGGTTTACTCCTATACCGAGAAAAAACGTATTCGTAAGGATTTTGGTAAACGTCCACAAGTTCTGGATGTACCTTATCTCCTTTCTATCCAGCTTGACTCGTTTCAGAAGTTTATCGAGCAAGATCCTGAAGGGCAGTACGGCCTGGAAGCAGCCTTCCGTTCCGTGTTCCCGATTCAG'},
+  {name:'Bacillus subtilis 168', hint:'rpoB · NCBI NP_387988.2', seq:'TTGACAGGTCAACTAGTTCAGTATGGACGACACCGCCAGCGCAGAAGCTATGCTCGCATTAGCGAAGTGTTAGAATTACCAAATCTCATTGAAATTCAAACCTCTTCTTATCAGTGGTTTCTTGATGAGGGTCTTAGAGAGATGTTTCAAGACATATCACCAATTGAGGATTTCACTGGT'},
+];
+
+// ---------- same algorithms as the on-chain program ----------
+function identityBps(a,b){const n=Math.min(a.length,b.length);let m=0;const mis=[];
+  for(let i=0;i<n;i++){if(a[i]===b[i])m++;else mis.push(i)}
+  return {bps:n?Math.floor(m*10000/n):0,mis,n}}
+function translate(dna){const out=[];for(let i=0;i+3<=dna.length;i+=3){const c=dna.slice(i,i+3),a=CODON[c];out.push({c,a});if(a==='*')break}return out}
+
+// ---------- Chou-Fasman propensities ----------
+const PA={E:1.51,M:1.45,A:1.42,L:1.21,K:1.16,F:1.13,Q:1.11,W:1.08,I:1.08,V:1.06,D:1.01,H:1.00,R:.98,T:.83,S:.77,C:.70,Y:.69,N:.67,P:.57,G:.57};
+const PB={V:1.70,I:1.60,Y:1.47,F:1.38,W:1.37,L:1.30,C:1.19,T:1.19,Q:1.10,M:1.05,R:.93,N:.89,H:.87,A:.83,S:.75,G:.75,K:.74,P:.55,D:.54,E:.37};
+function secondary(p){
+  const raw=[...p].map((_,i)=>{let a=0,b=0,k=0;for(let j=i-2;j<=i+2;j++){if(j<0||j>=p.length)continue;a+=PA[p[j]];b+=PB[p[j]];k++}
+    a/=k;b/=k;return a>1.05&&a>=b?'H':b>1.05&&b>a?'E':'C'});
+  // smooth away 1-residue blips
+  return raw.map((s,i)=>i>0&&i<raw.length-1&&raw[i-1]===raw[i+1]&&raw[i-1]!==s?raw[i-1]:s);
+}
+const CLS=a=>'AVLIMFWY'.includes(a)?'hyd':'KRH'.includes(a)?'pos':'DE'.includes(a)?'neg':'GPC'.includes(a)?'spe':a==='*'?'stop':'pol';
+
+// ---------- rendering ----------
+const $=id=>document.getElementById(id);
+function clean(s){return s.toUpperCase().replace(/[^ACGT]/g,'')}
+
+function run(){
+  const pasted=clean($('paste').value);
+  if(pasted.length<9){$('seq').innerHTML='<span style="opacity:1;color:var(--dim);letter-spacing:0">Paste a DNA read above and press Run pipeline.</span>';return}
+  const read=pasted.slice(0,300);
+
+  // 1. sequence
+  $('seq').innerHTML=[...read].map((b,i)=>`<span class="b${b}" style="animation-delay:${i*6}ms">${b}</span>`).join('');
+
+  // 2. identify
+  const res=REFS.map(r=>({...r,...identityBps(read,r.seq)}));
+  const best=res.reduce((a,b)=>b.bps>a.bps?b:a);
+  $('bars').innerHTML=res.map((r,i)=>`<div class="bar ${r===best?'win':''}">
+    <div class="lab"><span>${r.name} <span style="color:var(--dim);font-weight:400">· ${r.hint}</span></span><span class="mono">${(r.bps/100).toFixed(2)}%</span></div>
+    <div class="track"><div class="fill" data-w="${r.bps/100}"></div></div>
+    <div class="strip">${Array.from({length:r.n},(_,k)=>`<i${r.mis.includes(k)?' class="x"':''}></i>`).join('')}</div></div>`).join('');
+  requestAnimationFrame(()=>setTimeout(()=>document.querySelectorAll('.fill').forEach(f=>f.style.width=f.dataset.w+'%'),60));
+  $('verdict').innerHTML=`<div style="margin-top:16px">Best match: <span class="big">${best.name}</span> &nbsp;<span class="mono">${best.bps} bps · ${best.mis.length} mismatches over ${best.n} bp</span></div>`;
+
+  // 3. translate
+  const tr=translate(read);
+  $('codons').innerHTML=tr.map((t,i)=>`<div class="codon" style="animation-delay:${i*35}ms"><b class="mono">${[...t.c].map(x=>`<span class="b${x}">${x}</span>`).join('')}</b><div class="bead ${CLS(t.a)}">${t.a==='*'?'■':t.a}</div></div>`).join('');
+
+  // 4. secondary structure
+  const prot=tr.filter(t=>t.a!=='*').map(t=>t.a).join(''), ss=secondary(prot), W=15, Y=50;
+  let svg='',i=0;
+  while(i<ss.length){let j=i;while(j<ss.length&&ss[j]===ss[i])j++;
+    const x0=i*W+8,x1=j*W+8;
+    if(ss[i]==='H'){let d=`M${x0} ${Y}`;for(let x=x0;x<x1;x+=1.5)d+=` L${x} ${Y+Math.sin((x-x0)/W*3.6)*16}`;
+      svg+=`<path d="${d}" fill="none" stroke="var(--pink)" stroke-width="6" stroke-linecap="round" filter="url(#glow)"/>`}
+    else if(ss[i]==='E'){svg+=`<polygon points="${x0},${Y-9} ${x1-14},${Y-9} ${x1-14},${Y-18} ${x1},${Y} ${x1-14},${Y+18} ${x1-14},${Y+9} ${x0},${Y+9}" fill="var(--sky)" filter="url(#glow)"/>`}
+    else svg+=`<line x1="${x0}" y1="${Y}" x2="${x1}" y2="${Y}" stroke="var(--dim)" stroke-width="3" stroke-linecap="round"/>`;
+    i=j}
+  svg+=[...prot].map((a,k)=>`<text x="${k*W+8+W/2}" y="104" text-anchor="middle" font-size="12" fill="${ss[k]==='H'?'var(--pink)':ss[k]==='E'?'var(--sky)':'var(--dim)'}" font-family="ui-monospace,Menlo,monospace">${a}</text><text x="${k*W+8+W/2}" y="122" text-anchor="middle" font-size="10" fill="#5d5a94" font-family="ui-monospace,Menlo,monospace">${ss[k]==='H'?'α':ss[k]==='E'?'β':'·'}</text>`).join('');
+  const el=$('ss');el.setAttribute('width',prot.length*W+16);
+  el.innerHTML=`<defs><filter id="glow" x="-20%" y="-80%" width="140%" height="260%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`+svg;
+}
+$('run').onclick=run;run();
+
+// ---------- 5. 3D structure ----------
+const CH={A:['α','#8fd3ff'],B:['α','#8fd3ff'],C:['β (rpoB)','#ff9ee6'],D:["β′",'#8b8cff'],E:['ω','#ffd48a'],F:['σ70','#8ff5d2']};
+$('chainLegend').innerHTML=[['β (rpoB)','#ff9ee6'],["β′",'#8b8cff'],['α ×2','#8fd3ff'],['ω','#ffd48a'],['σ70','#8ff5d2']].map(([n,c])=>`<span><i style="background:${c}"></i>${n}</span>`).join('');
+let viewer=null,spinning=true;
+function style(betaOnly){
+  viewer.setStyle({},{});
+  for(const [c,[,col]] of Object.entries(CH)){
+    if(betaOnly&&c!=='C')viewer.setStyle({chain:c},{cartoon:{color:col,opacity:.12}});
+    else viewer.setStyle({chain:c},{cartoon:{color:col}});
+  }
+  viewer.zoomTo({chain:betaOnly?'C':Object.keys(CH)},600);viewer.render();
+  $('bFull').classList.toggle('on',!betaOnly);$('bBeta').classList.toggle('on',betaOnly);
+}
+function fallback(msg){ // animated ribbon so the box is never blank
+  $('vstatus').textContent=msg+' Showing an illustrative animated ribbon instead.';
+  const c=document.createElement('canvas'),v=$('viewer');v.innerHTML='';v.appendChild(c);
+  const g=c.getContext('2d');let t=0;
+  (function draw(){c.width=v.clientWidth;c.height=v.clientHeight;const w=c.width,h=c.height;
+    for(const [ph,col] of [[0,'#ff9ee6'],[2.1,'#8b8cff'],[4.2,'#8fd3ff']]){g.beginPath();
+      for(let i=0;i<=220;i++){const u=i/220,a=u*14+t+ph,r=70+40*Math.sin(u*5+ph),z=Math.cos(a);
+        const x=w/2+Math.sin(a)*r*1.6+Math.sin(t*.4+ph)*60,y=h*.12+u*h*.76;i?g.lineTo(x,y):g.moveTo(x,y);g.lineWidth=5+z*2}
+      g.strokeStyle=col;g.shadowColor=col;g.shadowBlur=18;g.lineCap='round';g.stroke()}
+    t+=.012;requestAnimationFrame(draw)})();
+}
+(async()=>{
+  if(typeof $3Dmol==='undefined')return fallback('3D viewer library could not load.');
+  try{
+    const r=await fetch('https://files.rcsb.org/download/4YG2.pdb');if(!r.ok)throw 0;
+    const pdb=await r.text();
+    viewer=$3Dmol.createViewer($('viewer'),{backgroundColor:'#07061a'});
+    viewer.addModel(pdb,'pdb');style(false);viewer.spin('y',.5);
+    $('vstatus').textContent='PDB 4YG2 · E. coli RNA polymerase σ70 holoenzyme (Murakami 2013) · drag to rotate, scroll to zoom';
+    $('bFull').onclick=()=>style(false);$('bBeta').onclick=()=>style(true);
+    $('bSpin').onclick=()=>{spinning=!spinning;viewer.spin(spinning?'y':false,.5);$('bSpin').textContent=spinning?'Pause spin':'Resume spin'};
+  }catch(e){fallback('Could not fetch the structure from RCSB.')}
+})();
+</script>
+</body>
+</html>
